@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="39e00477-be48-4cb7-b98b-c817113dcc16" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="4077babf-6b42-41b6-85ab-a23c772a30d9" basePath="/us/" >
+		<http:request-connection host="api.zippopotam.us" port="80" />
+	</http:request-config>
+	<flow name="payload-content-enrichment-demo" doc:id="3eeae74d-6112-471f-8cca-efda0f5aa38a" >
+		<http:listener doc:name="POST /enrich" doc:id="bb05951d-01ee-41c6-987b-96ca7eac9bab" config-ref="HTTP_Listener_config" path="/enrich"/>
+		<logger level="INFO" doc:name="Log incoming payload" doc:id="d5c0d8bf-5e05-441e-a0f9-186c4cb15d34" message="#[payload]"/>
+		<ee:transform doc:name="Enrich payload step#1" doc:id="3f4cb2c0-1e01-42b4-be30-bfb367a6ac80" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload ++ {
+	game: "Cricket"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Enrich payload step#2" doc:id="6ffb5911-8e84-43c4-85b7-1d36b3fe8e6f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import java!java::lang::Math
+
+output application/json
+---
+payload ++ {
+	randomNumber : Math::random()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-payload value="#[output application/java --- write((payload ++ {date:now() as String {format:'yyyy-MM-dd'}}),'application/json')]" doc:name="Enrich payload step#3" doc:id="0d88deb6-7a12-482e-95a1-7e17584622cb" mimeType="application/json"/>
+		<http:request method="GET" doc:name="Get Country from zipcode" doc:id="4ee372a5-0b44-4e02-854f-eb53bd20fe05" config-ref="HTTP_Request_configuration" path="#[payload.zipCode]" target="country" targetValue="#[payload.country]" outputMimeType="application/json"/>
+		<set-payload value="#[output application/java --- write((payload ++ {countryName:vars.country as String}),'application/json')]" doc:name="Enrich payload step#4" doc:id="e32cb427-82ce-4ca3-85cf-497050635f9f" mimeType="application/json"/>
+		<parse-template doc:name="Parse Template" doc:id="6583566a-f11f-4999-9619-313a6ea6eafd" location="success.json"/>
+	</flow>
+</mule>
