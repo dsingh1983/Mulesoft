@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:java="http://www.mulesoft.org/schema/mule/java"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="0edfe194-d9cf-4dda-a8b7-382c72626f8b" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="mule-spring-demo" doc:id="288f057d-1e29-4b7c-b9ed-b939005c3f4a" >
+		<http:listener doc:name="GET /employee" doc:id="f360885f-8bca-4ef1-8c80-72cbd22fdd2f" config-ref="HTTP_Listener_config" path="/employee"/>
+		<java:invoke method="getDetails()" doc:name="Invoke" doc:id="36b233af-ea58-43fd-b87e-7163050fcf88" instance="empId" class="com.demo.Employee"/>
+		<logger level="INFO" doc:name="Logger" doc:id="07f9288e-9046-4787-8d9e-e8ed4e5c7a3f" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="d6a58c4c-4ccf-4cbd-8963-6cedde524e42" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	employeeDetails : payload 
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
